@@ -1,0 +1,94 @@
+Perguntas mongoDB lab:
+
+1- What is the total number of articles in the collection?
+	test> db.dblp_nosql.countDocuments()
+	842
+
+2- How many articles are open (“info.access” property)?
+	test> db.dblp_nosql.countDocuments({"info.access": "open"})
+	191
+	
+3- What is the number of articles per year?
+	test> db.dblp_nosql.aggregate([{ $group: { _id: "$info.year", count: { $sum: 1 } } },
+	...   { $sort: { _id: 1 } }
+	... ])
+	[
+	  { _id: '2010', count: 3 },
+	  { _id: '2011', count: 17 },
+	  { _id: '2012', count: 21 },
+	  { _id: '2013', count: 48 },
+	  { _id: '2014', count: 76 },
+	  { _id: '2015', count: 116 },
+	  { _id: '2016', count: 129 },
+	  { _id: '2017', count: 105 },
+	  { _id: '2018', count: 96 },
+	  { _id: '2019', count: 76 },
+	  { _id: '2020', count: 80 },
+	  { _id: '2021', count: 61 },
+	  { _id: '2022', count: 14 }
+	]
+	
+4- How many articles were published in journals?
+	test> db.dblp_nosql.countDocuments({"info.type": "Journal Articles"})
+	228
+	
+5- How many articles are single authored (one author only)?
+	test> db.dblp_nosql.aggregate([{ $match: { "info.authors.author": { $exists: true } } },
+	...   { $project: {
+	...       isSingleAuthor: { $not: { $isArray: "$info.authors.author" } }
+	...   }},
+	...   { $match: { isSingleAuthor: true } },
+	...   { $count: "singleAuthorCount" }
+	... ])
+	[ { singleAuthorCount: 98 } ]
+
+6- What is the distribution of articles per number of authors?
+	test> db.dblp_nosql.aggregate([{ $match: { "info.authors.author": { $exists: true, $type: "array" } } },
+	...   { $project: {
+	...       authorCount: { $size: "$info.authors.author" }
+	...   }},
+	...   { $match: { authorCount: { $gte: 2 } } },
+	...   { $group: {
+	...       _id: "$authorCount",
+	...       count: { $sum: 1 }
+	...   }},
+	...   { $sort: { _id: 1 } }
+	... ])
+	[
+	  { _id: 2, count: 175 },
+	  { _id: 3, count: 246 },
+	  { _id: 4, count: 159 },
+	  { _id: 5, count: 93 },
+	  { _id: 6, count: 38 },
+	  { _id: 7, count: 21 },
+	  { _id: 8, count: 5 },
+	  { _id: 9, count: 3 },
+	  { _id: 10, count: 3 },
+	  { _id: 11, count: 1 }
+	]
+
+7- Who are the authors with the most papers published?
+	test> db.dblp_nosql.aggregate([{ $match: { "info.authors.author": { $exists: true } } },
+	...   { $unwind: {
+	...       path: "$info.authors.author",
+	...       preserveNullAndEmptyArrays: false
+	...   }},
+	...   { $group: {
+	...       _id: "$info.authors.author.text",
+	...       paperCount: { $sum: 1 }
+	...   }},
+	...   { $sort: { paperCount: -1 } },
+	...   { $limit: 10 }
+	... ])
+	[
+	  { _id: 'Stefanie Scherzinger', paperCount: 28 },
+	  { _id: 'Uta Störl', paperCount: 25 },
+	  { _id: 'Gilles Zurfluh', paperCount: 22 },
+	  { _id: 'Meike Klettke', paperCount: 21 },
+	  { _id: 'Amal Ait Brahim', paperCount: 20 },
+	  { _id: 'Ronaldo dos Santos Mello', paperCount: 18 },
+	  { _id: 'Fatma Abdelhédi', paperCount: 16 },
+	  { _id: 'Olivier Teste', paperCount: 16 },
+	  { _id: 'Mohammed El Malki', paperCount: 14 },
+	  { _id: 'Maristela Holanda', paperCount: 11 }
+	]
