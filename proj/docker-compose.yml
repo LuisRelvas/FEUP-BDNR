@@ -8,6 +8,7 @@ services:
       - "9042:9042"  # CQL port
     volumes:
       - scylla-data:/var/lib/scylla
+      - ./dataset:/dataset  # dataset directory
     command: --developer-mode=1 --smp 1
 
 volumes:

@@ -1,0 +1,9 @@
+<form action="bookit.php" method="POST">
+    <label for="url">URL:</label>
+    <input type="url" id="url" name="url" required>
+    
+    <label for="tags">Tags (separadas por espaços):</label>
+    <input type="text" id="tags" name="tags" pattern="^(\w+\s*)+$" title="Use apenas palavras separadas por espaços." required>
+    
+    <button type="submit">Adicionar Bookmark</button>
+</form>
