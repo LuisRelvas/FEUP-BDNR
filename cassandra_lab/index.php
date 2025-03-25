@@ -6,7 +6,6 @@ $tags = isset($_GET['tags']) ? urlencode($_GET['tags']) : '';
 $api_url = "http://localhost:5000/bookmarks?tags=$tags";
 $response = file_get_contents($api_url);
 
-
 $bookmarks = json_decode($response, true);
 ?>
 <!DOCTYPE html>
@@ -20,6 +19,7 @@ $bookmarks = json_decode($response, true);
             background-color: #f3f3f3;
             padding: 20px;
             color: #333;
+            align
         }
         h1 {
             text-align: center;
@@ -63,11 +63,26 @@ $bookmarks = json_decode($response, true);
             color: #999;
             margin-top: 5px;
         }
+        .button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
 
 <h1>Bookmarks</h1>
+<div style="text-align: center; margin-bottom: 20px;">
+    <a href="add.html" class="button">
+        Add Bookmark
+    </a>
+</div>
+
 
 <div class="container">
     <?php if (!empty($bookmarks)): ?>
