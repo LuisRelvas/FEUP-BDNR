@@ -18,8 +18,17 @@
                 <th>URL</th>
                 <th>Name</th>
                 <th>Description</th>
+                <th>NeighborHood Overview</th>
+                <th>Property Type</th>
+                <th>Room Type</th>
+                <th>Accommodates</th>
+                <th>Bathrooms</th>
+                <th>Bedrooms</th>
+                <th>Amenities</th>
                 <th>Host ID</th>
                 <th>Host Name</th>
+                <th>Minimum Nights</th>
+                <th>Maximum Nights</th>
                 <th>Price</th>
             </tr>
         </thead>
@@ -36,8 +45,17 @@
                             <td><a href='{$listing['listing_url']}' target='_blank'>Link</a></td>
                             <td>{$listing['name']}</td>
                             <td>{$listing['description']}</td>
+                            <td>{$listing['neighborhood_overview']}</td>
+                            <td>{$listing['property_type']}</td>
+                            <td>{$listing['room_type']}</td>
+                            <td>{$listing['accommodates']}</td>
+                            <td>{$listing['bathrooms']}</td>
+                            <td>{$listing['bedrooms']}</td>
+                            <td>{$listing['amenities']}</td>
                             <td>{$listing['host_id']}</td>
                             <td>{$listing['host_name']}</td>
+                            <td>{$listing['minimum_nights']}</td>
+                            <td>{$listing['maximum_nights']}</td>
                             <td>" . number_format($listing['price'], 2) . "</td>
                           </tr>";
                 }

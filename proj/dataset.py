@@ -17,11 +17,11 @@ host_columns = [
     'host_verifications', 'host_has_profile_pic', 'host_identity_verified'
 ]
 
-test_columns = [
-    'id', 'listing_url', 'name', 'description', 'host_id', 'host_name', 'price'
+listing_columns = [
+    'id', 'listing_url', 'name', 'description','neighborhood_overview', 'property_type', 'room_type','accommodates', 'bathrooms','bedrooms', 'amenities'  ,'host_id', 'host_name', 'minimum_nights','maximum_nights', 'price'
 ]
 
-df_test = df[test_columns]
+df_test = df[listing_columns]
 
 df_test.to_csv('./dataset/test_data.csv', index=False)
 
