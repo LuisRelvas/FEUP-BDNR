@@ -34,9 +34,13 @@
         </thead>
         <tbody>
             <?php
-            $url = 'http://localhost:5000/listings'; // URL da API
-            $json = file_get_contents($url);
+            $urlListings = 'http://localhost:5000/listings'; // URL da API
+            $json = file_get_contents($urlListings);
             $listings = json_decode($json, true);
+
+            $urlHosts = 'http://localhost:5000/hosts'; // URL da API
+            $jsonHosts = file_get_contents($urlHosts);
+            $hosts = json_decode($jsonHosts, true);
 
             if ($listings) {
                 foreach ($listings as $listing) {
@@ -65,5 +69,31 @@
             ?>
         </tbody>
     </table>
+    <h1>Hosts</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Host Since</th>
+                <th>Response Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            if ($hosts) {
+                foreach ($hosts as $host) {
+                    echo "<tr>
+                            <td>{$host['host_id']}</td>
+                            <td>{$host['host_name']}</td>
+                            <td>{$host['host_since']}</td>
+                            <td>{$host['host_response_time']}</td>
+                          </tr>";
+                }
+            } else {
+                echo "<tr><td colspan='7'>Nenhum dado encontrado.</td></tr>";
+            }
+            ?>
+        </tbody>
 </body>
 </html>

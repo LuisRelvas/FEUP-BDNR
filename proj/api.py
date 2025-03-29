@@ -7,9 +7,42 @@ cluster = Cluster(['localhost'])
 session = cluster.connect()
 
 session.set_keyspace('house_market') 
+
+@app.route('/hosts', methods=['GET'])
+def get_hosts():
+    rows = session.execute('SELECT * FROM hosts LIMIT 1')
+    hosts = []
+    for row in rows:
+        hosts.append({
+            'host_id': row.host_id,
+            'host_name': row.host_name,
+            'host_since': row.host_since,
+            'host_location': row.host_location,
+            'host_response_time': row.host_response_time,
+            'host_response_rate': row.host_response_rate,
+            'host_acceptance_rate': row.host_acceptance_rate,
+            'host_is_superhost': row.host_is_superhost,
+            'host_thumbnail_url': row.host_thumbnail_url,
+            'host_picture_url': row.host_picture_url,
+            'host_neighbourhood': row.host_neighbourhood,
+            'host_listings_count': row.host_listings_count,
+            'host_total_listings_count': row.host_total_listings_count,
+            'host_verifications': row.host_verifications,
+            'host_has_profile_pic': row.host_has_profile_pic,
+            'host_identity_verified': row.host_identity_verified
+        })
+    return jsonify(hosts)
+
+
 @app.route('/listings', methods=['GET'])
 def get_listings():
-    rows = session.execute('SELECT * FROM listings LIMIT 1')
+    host_rows = session.execute('SELECT * FROM hosts LIMIT 1')
+    host_id = None
+    for row in host_rows:
+        host_id = row.host_id
+    if host_id is None:
+        return jsonify({'error': 'Host not found'}), 404
+    rows = session.execute('SELECT * FROM listings WHERE id = 41339')
     listings = []
     for row in rows:
         listings.append({
@@ -31,6 +64,24 @@ def get_listings():
             'price': float(row.price) if row.price else None
         })
     return jsonify(listings)
+
+
+
+@app.route('/availability', methods=['GET'])
+def get_availability():
+    rows = session.execute('SELECT * FROM availability LIMIT 1')
+    availability = []
+    for row in rows:
+        availability.append({
+            'id': row.id,
+            'has_availability': row.has_availability,
+            'availability_30': row.availability_30,
+            'availability_60': row.availability_60,
+            'availability_90': row.availability_90,
+            'availability_365': row.availability_365
+        })
+    return jsonify(availability)
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
