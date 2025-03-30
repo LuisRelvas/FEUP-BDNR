@@ -15,6 +15,7 @@ session.execute("""
 session.set_keyspace('house_market')
 
 # Drop the table if it exists in order to add more columns to the TABLE
+session.execute('DROP MATERIALIZED VIEW IF EXISTS listings_by_host;')
 session.execute("DROP TABLE IF EXISTS house_market.listings")
 session.execute("DROP TABLE IF EXISTS house_market.hosts")
 session.execute("DROP TABLE IF EXISTS house_market.availability")
@@ -40,6 +41,10 @@ session.execute("""
         price DECIMAL
     )
 """)
+
+# session.execute("""
+#     CREATE INDEX IF NOT EXISTS ON listings (host_id)
+# """)
 
 # HOSTS TABLE
 session.execute("""

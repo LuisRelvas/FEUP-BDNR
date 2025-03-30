@@ -33,6 +33,8 @@ def get_hosts():
         })
     return jsonify(hosts)
 
+session.execute('DROP MATERIALIZED VIEW IF EXISTS listings_by_host;')
+session.execute('CREATE MATERIALIZED VIEW listings_by_host AS SELECT * FROM listings WHERE host_id IS NOT NULL PRIMARY KEY (host_id, id);')
 
 @app.route('/listings', methods=['GET'])
 def get_listings():
@@ -42,7 +44,7 @@ def get_listings():
         host_id = row.host_id
     if host_id is None:
         return jsonify({'error': 'Host not found'}), 404
-    rows = session.execute('SELECT * FROM listings WHERE id = 41339')
+    rows = session.execute(f'SELECT * FROM listings_by_host WHERE host_id = {host_id}')
     listings = []
     for row in rows:
         listings.append({
