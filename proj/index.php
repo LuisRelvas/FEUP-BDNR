@@ -1,3 +1,29 @@
+<?php
+
+# ROUTE HANDLER
+$request_uri = $_SERVER['REQUEST_URI'];
+$url = parse_url($request_uri, PHP_URL_PATH);
+
+if ($url == '/' || $url == '/index.php') {
+} 
+
+elseif (preg_match('/^\/listings\/(\d+)$/', $url, $matches)) {
+    $listing_id = $matches[1];
+    include 'listingPage.php';
+    exit;
+} 
+elseif (preg_match('/^\/hosts\/(\d+)$/', $url, $matches)) {
+    $host_id = $matches[1];
+    include 'hostPage.php';
+    exit;
+} 
+else {
+    header("HTTP/1.0 404 Not Found");
+    echo "<h1>404 Not Found</h1>";
+    echo "<p>The page you requested could not be found.</p>";
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -17,18 +43,6 @@
                 <th>ID</th>
                 <th>URL</th>
                 <th>Name</th>
-                <th>Description</th>
-                <th>NeighborHood Overview</th>
-                <th>Property Type</th>
-                <th>Room Type</th>
-                <th>Accommodates</th>
-                <th>Bathrooms</th>
-                <th>Bedrooms</th>
-                <th>Amenities</th>
-                <th>Host ID</th>
-                <th>Host Name</th>
-                <th>Minimum Nights</th>
-                <th>Maximum Nights</th>
                 <th>Price</th>
             </tr>
         </thead>
@@ -47,19 +61,7 @@
                     echo "<tr>
                             <td>{$listing['id']}</td>
                             <td><a href='{$listing['listing_url']}' target='_blank'>Link</a></td>
-                            <td>{$listing['name']}</td>
-                            <td>{$listing['description']}</td>
-                            <td>{$listing['neighborhood_overview']}</td>
-                            <td>{$listing['property_type']}</td>
-                            <td>{$listing['room_type']}</td>
-                            <td>{$listing['accommodates']}</td>
-                            <td>{$listing['bathrooms']}</td>
-                            <td>{$listing['bedrooms']}</td>
-                            <td>{$listing['amenities']}</td>
-                            <td>{$listing['host_id']}</td>
-                            <td>{$listing['host_name']}</td>
-                            <td>{$listing['minimum_nights']}</td>
-                            <td>{$listing['maximum_nights']}</td>
+                            <td><a href='/listings/{$listing['id']}'>{$listing['name']}</a></td>
                             <td>" . number_format($listing['price'], 2) . "</td>
                           </tr>";
                 }

@@ -10,7 +10,7 @@ session.set_keyspace('house_market')
 
 @app.route('/hosts', methods=['GET'])
 def get_hosts():
-    rows = session.execute('SELECT * FROM hosts LIMIT 1')
+    rows = session.execute('SELECT * FROM hosts')
     hosts = []
     for row in rows:
         hosts.append({
@@ -33,18 +33,36 @@ def get_hosts():
         })
     return jsonify(hosts)
 
+@app.route('/hosts/<int:host_id>', methods=['GET'])
+def get_hosts_by_id(host_id):
+    rows = session.execute(f'SELECT * FROM hosts where host_id = {host_id}')
+    for row in rows:
+        host = {
+            'host_id': row.host_id,
+            'host_name': row.host_name,
+            'host_since': row.host_since,
+            'host_location': row.host_location,
+            'host_response_time': row.host_response_time,
+            'host_response_rate': row.host_response_rate,
+            'host_acceptance_rate': row.host_acceptance_rate,
+            'host_is_superhost': row.host_is_superhost,
+            'host_thumbnail_url': row.host_thumbnail_url,
+            'host_picture_url': row.host_picture_url,
+            'host_neighbourhood': row.host_neighbourhood,
+            'host_listings_count': row.host_listings_count,
+            'host_total_listings_count': row.host_total_listings_count,
+            'host_verifications': row.host_verifications,
+            'host_has_profile_pic': row.host_has_profile_pic,
+            'host_identity_verified': row.host_identity_verified
+        }
+    return jsonify(host)
+
 session.execute('DROP MATERIALIZED VIEW IF EXISTS listings_by_host;')
 session.execute('CREATE MATERIALIZED VIEW listings_by_host AS SELECT * FROM listings WHERE host_id IS NOT NULL PRIMARY KEY (host_id, id);')
 
 @app.route('/listings', methods=['GET'])
 def get_listings():
-    host_rows = session.execute('SELECT * FROM hosts LIMIT 1')
-    host_id = None
-    for row in host_rows:
-        host_id = row.host_id
-    if host_id is None:
-        return jsonify({'error': 'Host not found'}), 404
-    rows = session.execute(f'SELECT * FROM listings_by_host WHERE host_id = {host_id}')
+    rows = session.execute(f'SELECT * FROM listings')
     listings = []
     for row in rows:
         listings.append({
@@ -66,6 +84,38 @@ def get_listings():
             'price': float(row.price) if row.price else None
         })
     return jsonify(listings)
+
+@app.route('/listings/<int:listing_id>', methods=['GET'])
+def get_listing_by_id(listing_id):
+    query = f"SELECT * FROM listings WHERE id = {listing_id}"
+    rows = session.execute(query)
+    
+    row = next(iter(rows), None)
+    
+    if not row:
+        return jsonify({"error": "Listing not found"}), 404
+    
+    # Format the listing data
+    listing = {
+        'id': row.id,
+        'listing_url': row.listing_url,
+        'name': row.name,
+        'description': row.description,
+        'neighborhood_overview': row.neighborhood_overview,
+        'property_type': row.property_type,
+        'room_type': row.room_type,
+        'accommodates': row.accommodates,
+        'bathrooms': row.bathrooms,
+        'bedrooms': row.bedrooms,
+        'amenities': row.amenities,
+        'host_id': row.host_id,
+        'host_name': row.host_name,
+        'minimum_nights': row.minimum_nights,
+        'maximum_nights': row.maximum_nights,
+        'price': float(row.price) if row.price else None
+    }
+    
+    return jsonify(listing)
 
 
 
