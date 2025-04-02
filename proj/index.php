@@ -41,9 +41,13 @@ else {
         <thead>
             <tr>
                 <th>ID</th>
-                <th>URL</th>
+                <th>Picture</th>
                 <th>Name</th>
                 <th>Price</th>
+                <th>Host</th>
+                <th>Location</th>
+                <th>Rating</th>
+
             </tr>
         </thead>
         <tbody>
@@ -59,10 +63,13 @@ else {
             if ($listings) {
                 foreach ($listings as $listing) {
                     echo "<tr>
-                            <td>{$listing['id']}</td>
-                            <td><a href='{$listing['listing_url']}' target='_blank'>Link</a></td>
-                            <td><a href='/listings/{$listing['id']}'>{$listing['name']}</a></td>
+                            <td>{$listing['listing_id']}</td>
+                            <td><a href='{$listing['picture_url']}' target='_blank'>Link</a></td>
+                            <td><a href='/listings/{$listing['listing_id']}'>{$listing['name']}</a></td>
                             <td>" . number_format($listing['price'], 2) . "</td>
+                            <td><a href='/hosts/{$listing['host_id']}'>{$listing['host_id']}</a></td>
+                            <td>{$listing['neighbourhood_cleansed']}</td>
+                            <td>{$listing['rating']}</td>
                           </tr>";
                 }
             } else {
@@ -77,8 +84,10 @@ else {
             <tr>
                 <th>ID</th>
                 <th>Name</th>
-                <th>Host Since</th>
+                <th>Host Location</th>
+                <th>About</th>
                 <th>Response Time</th>
+                <th>Picture</th>
             </tr>
         </thead>
         <tbody>
@@ -88,8 +97,10 @@ else {
                     echo "<tr>
                             <td>{$host['host_id']}</td>
                             <td>{$host['host_name']}</td>
-                            <td>{$host['host_since']}</td>
+                            <td>{$host['host_location']}</td>
+                            <td>{$host['host_about']}</td>
                             <td>{$host['host_response_time']}</td>
+                            <td>{$host['host_picture_url']}</td>
                           </tr>";
                 }
             } else {

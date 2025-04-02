@@ -15,7 +15,7 @@ session.execute("""
 session.set_keyspace('house_market')
 
 # Drop the table if it exists in order to add more columns to the TABLE
-session.execute('DROP MATERIALIZED VIEW IF EXISTS listings_by_host;')
+# session.execute('DROP MATERIALIZED VIEW IF EXISTS listings_by_host;')
 session.execute("DROP TABLE IF EXISTS house_market.listings")
 session.execute("DROP TABLE IF EXISTS house_market.hosts")
 session.execute("DROP TABLE IF EXISTS house_market.availability")
@@ -23,22 +23,23 @@ session.execute("DROP TABLE IF EXISTS house_market.availability")
 # LISTINGS TABLE
 session.execute("""
     CREATE TABLE IF NOT EXISTS listings (
-        id BIGINT PRIMARY KEY,
-        listing_url TEXT,
+        listing_id BIGINT PRIMARY KEY,
         name TEXT,
         description TEXT,
         neighborhood_overview TEXT,
-        property_type TEXT,
-        room_type TEXT,
-        accommodates INT,
-        bathrooms FLOAT,
-        bedrooms FLOAT,
+        neighbourhood_cleansed TEXT,
+        neighbourhood_group_cleansed TEXT,
         amenities TEXT,
+        property_type TEXT,
+        price FLOAT,
+        bedrooms FLOAT,
+        bathrooms FLOAT,
+        review_scores_rating FLOAT,
         host_id BIGINT,
         host_name TEXT,
-        minimum_nights INT,
-        maximum_nights INT,
-        price DECIMAL
+        host_location TEXT,
+        host_response_time TEXT,
+        picture_url TEXT
     )
 """)
 
@@ -46,29 +47,21 @@ session.execute("""
 #     CREATE INDEX IF NOT EXISTS ON listings (host_id)
 # """)
 
-# HOSTS TABLE
+# LISTINGS_BY_HOST TABLE
 session.execute("""
-    CREATE TABLE IF NOT EXISTS hosts (
-        host_id BIGINT PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS listings_by_host (
+        host_id BIGINT,
+        listing_id BIGINT,
         host_name TEXT,
-        host_since TEXT,
         host_location TEXT,
+        host_about TEXT,
         host_response_time TEXT,
-        host_response_rate TEXT,
-        host_acceptance_rate TEXT,
-        host_is_superhost TEXT,
-        host_thumbnail_url TEXT,
         host_picture_url TEXT,
-        host_neighbourhood TEXT,
-        host_listings_count INT,
-        host_total_listings_count INT,
-        host_verifications TEXT,
-        host_has_profile_pic TEXT,
-        host_identity_verified TEXT
+        PRIMARY KEY (host_id, listing_id)
     )
 """)
 
-# AVAILABILITY TABLE
+# AVAILABILITY_LISTINGS_BY_DATE_AND_LOCATION TABLE
 session.execute("""
     CREATE TABLE IF NOT EXISTS availability (
         id BIGINT PRIMARY KEY,
@@ -80,32 +73,52 @@ session.execute("""
     )
 """)
 
+def getCleanNumber(value_str):
+    if not value_str:
+        return None
+    
+    # Replace comma with period (in case of European number format)
+    value_str = value_str.replace(',', '.')
+    
+    try:
+        # Try direct conversion first
+        return int(float(value_str))
+    except ValueError:
+        # If that fails, try handling scientific notation
+        try:
+            # Convert to float first to handle scientific notation, then to int
+            return int(float(value_str))
+        except ValueError:
+            print(f"Warning: Could not convert '{value_str}' to number")
+            return None    
+
 
 csv_file_path = 'dataset/listingTable.csv'
 with open(csv_file_path, 'r') as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
-        price = row['price'].replace(',', '') if row['price'] else None
+        price = row['price'].replace(',', '').replace('$', '') if row['price'] else None
         session.execute("""
-            INSERT INTO listings (id, listing_url, name, description,neighborhood_overview, property_type,room_type,accommodates,bathrooms,bedrooms,amenities, host_id, host_name,minimum_nights,maximum_nights ,price)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO listings (listing_id, name, description, neighborhood_overview,neighbourhood_cleansed, neighbourhood_group_cleansed, amenities,property_type,price,bedrooms,bathrooms,review_scores_rating,host_id,host_name, host_location,host_response_time, picture_url)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
-            int(row['id']),  
-            row['listing_url'],
+            getCleanNumber(row['id']),  
             row['name'],
             row['description'],
             row['neighborhood_overview'],
-            row['property_type'],
-            row['room_type'],
-            int(row['accommodates']),
-            float(row['bathrooms']) if row['bathrooms'] else None,
-            float(row['bedrooms']) if row['bedrooms'] else None,
+            row['neighbourhood_cleansed'],
+            row['neighbourhood_group_cleansed'],
             row['amenities'],
-            int(row['host_id']),  
+            row['property_type'],
+            float(price) if price else None,
+            float(row['bedrooms']) if row['bedrooms'] else None,
+            float(row['bathrooms']) if row['bathrooms'] else None,
+            float(row['review_scores_rating']) if row['review_scores_rating'] else None,
+            getCleanNumber(row['host_id']),  
             row['host_name'],
-            int(row['minimum_nights']),
-            int(row['maximum_nights']),
-            float(price) if price else None
+            row['host_location'],
+            row['host_response_time'],
+            row['picture_url']
         ))
 
 csv_file_path = 'dataset/hostTable.csv'
@@ -113,25 +126,16 @@ with open(csv_file_path, 'r') as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         session.execute("""
-            INSERT INTO hosts (host_id, host_name, host_since, host_location, host_response_time, host_response_rate, host_acceptance_rate, host_is_superhost, host_thumbnail_url, host_picture_url, host_neighbourhood, host_listings_count, host_total_listings_count, host_verifications, host_has_profile_pic, host_identity_verified)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s,%s,%s,%s,%s,%s,%s,%s,%s)
+        INSERT INTO listings_by_host (host_id, listing_id, host_name, host_location, host_about, host_response_time, host_picture_url)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (
-            int(row['host_id']),  
+            getCleanNumber(row['host_id']),
+            getCleanNumber(row['id']),  
             row['host_name'],
-            row['host_since'],
             row['host_location'],
+            row['host_about'],
             row['host_response_time'],
-            row['host_response_rate'],
-            row['host_acceptance_rate'],
-            row['host_is_superhost'],
-            row['host_thumbnail_url'],
             row['host_picture_url'],
-            row['host_neighbourhood'],
-            int(float(row['host_listings_count'])) if row['host_listings_count'] else None,
-            int(float(row['host_total_listings_count'])) if row['host_total_listings_count'] else None,
-            row['host_verifications'],
-            row['host_has_profile_pic'],
-            row['host_identity_verified']
         ))
     
 csv_file_path = 'dataset/availabilityTable.csv'
@@ -142,7 +146,7 @@ with open(csv_file_path, 'r') as csvfile:
             INSERT INTO availability (id, has_availability, availability_30, availability_60, availability_90, availability_365)
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (
-            int(row['id']),  
+            getCleanNumber(row['id']),  
             row['has_availability'],
             int(row['availability_30']),
             int(row['availability_60']),
