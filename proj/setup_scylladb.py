@@ -19,6 +19,8 @@ session.set_keyspace('house_market')
 session.execute("DROP TABLE IF EXISTS house_market.listings")
 session.execute("DROP TABLE IF EXISTS house_market.hosts")
 session.execute("DROP TABLE IF EXISTS house_market.availability")
+session.execute("DROP TABLE IF EXISTS house_market.available_listings_by_date_and_location")
+session.execute("DROP TABLE IF EXISTS house_market.bookings_by_listing")
 
 # LISTINGS TABLE
 session.execute("""
@@ -70,6 +72,33 @@ session.execute("""
         availability_60 INT,
         availability_90 INT,
         availability_365 INT
+    )
+""")
+
+# AVAILABILITY_LISTINGS_BY_DATE_AND_LOCATION TABLE
+session.execute("""
+    CREATE TABLE IF NOT EXISTS available_listings_by_date_and_location (
+        listing_id BIGINT,
+        date DATE,
+        neighbourhood_cleansed TEXT,
+        has_availability BOOLEAN,
+        price DECIMAL,
+        adjusted_price DECIMAL,
+        name TEXT,
+        property_type TEXT,
+        review_scores_rating  FLOAT,
+        PRIMARY KEY ((date, neighbourhood_cleansed), listing_id)
+    )
+""")
+
+# BOOKINGS_BY_LISTING TABLE
+session.execute("""
+    CREATE TABLE IF NOT EXISTS bookings_by_listing (
+        listing_id BIGINT,
+        start_date DATE,
+        end_date DATE,
+        guest_username TEXT,
+        PRIMARY KEY (listing_id, start_date)
     )
 """)
 
@@ -154,4 +183,49 @@ with open(csv_file_path, 'r') as csvfile:
             int(row['availability_365'])
         ))
 
+# Load listings data into memory
+listings_data = {}
+rows = session.execute("SELECT listing_id, name, review_scores_rating, property_type, neighbourhood_cleansed FROM listings")
+for row in rows:
+    listings_data[row.listing_id] = {
+        'name': row.name,
+        'review_scores_rating': row.review_scores_rating,
+        'neighbourhood_cleansed': row.neighbourhood_cleansed,
+        'property_type': row.property_type
+    }
+
+# Load data from calendar.csv and add listings data
+csv_file_path = 'dataset/calendar.csv'
+with open(csv_file_path, 'r') as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        price = row['price'].replace('$', '').replace(',', '') if row['price'] else None
+        adjusted_price = row['adjusted_price'].replace('$', '').replace(',', '') if row['adjusted_price'] else None
+        has_availability = True if row['available'].lower() == 't' else False
+
+        listing_id = int(row['listing_id'])
+        listing_info = listings_data.get(listing_id, {
+            'name': 'Unknown',
+            'property_type': 'Unknown',
+            'review_scores_rating': None,
+            'neighbourhood_cleansed': 'Unknown'
+        })
+
+        session.execute("""
+            INSERT INTO available_listings_by_date_and_location (
+                listing_id, date, neighbourhood_cleansed, has_availability, price, adjusted_price, name, property_type, review_scores_rating
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            listing_id,
+            row['date'],
+            listing_info['neighbourhood_cleansed'],
+            has_availability,
+            float(price) if price else None,
+            float(adjusted_price) if adjusted_price else None,
+            listing_info['name'],
+            listing_info['property_type'],
+            listing_info['review_scores_rating'],
+        ))
+
 print("Keyspace, table, and data import completed successfully.")
+

@@ -109,7 +109,7 @@ def get_listings():
 
 
 
-@app.route('/availability', methods=['GET'])
+@app.route('/availability/<int:listing_id>/', methods=['GET'])
 def get_availability():
     rows = session.execute('SELECT * FROM availability LIMIT 1')
     availability = []
@@ -123,6 +123,24 @@ def get_availability():
             'availability_365': row.availability_365
         })
     return jsonify(availability)
+
+@app.route('/listings2/', methods=['GET'])
+def get_listings_by_date_location():
+    rows = session.execute('SELECT * FROM available_listings_by_date_and_location limit 10')
+    listings = []
+    for row in rows:
+        listings.append({
+            'listing_id': row.listing_id,
+            'date': str(row.date) if row.date else None,
+            'neighbourhood_cleansed': row.neighbourhood_cleansed,
+            'has_availability': row.has_availability,
+            'price': float(row.price) if row.price else None,
+            'name': row.name,
+            'property_type': row.property_type,
+            'review_scores_rating': round(float(row.review_scores_rating),2) if row.review_scores_rating else None
+        })
+    return jsonify(listings)
+
 
 
 if __name__ == '__main__':
