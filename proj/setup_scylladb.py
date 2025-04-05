@@ -65,18 +65,6 @@ session.execute("""
 
 # AVAILABILITY_LISTINGS_BY_DATE_AND_LOCATION TABLE
 session.execute("""
-    CREATE TABLE IF NOT EXISTS availability (
-        id BIGINT PRIMARY KEY,
-        has_availability TEXT,
-        availability_30 INT,
-        availability_60 INT,
-        availability_90 INT,
-        availability_365 INT
-    )
-""")
-
-# AVAILABILITY_LISTINGS_BY_DATE_AND_LOCATION TABLE
-session.execute("""
     CREATE TABLE IF NOT EXISTS available_listings_by_date_and_location (
         listing_id BIGINT,
         date DATE,
@@ -166,7 +154,7 @@ with open(csv_file_path, 'r') as csvfile:
             row['host_response_time'],
             row['host_picture_url'],
         ))
-    
+
 csv_file_path = 'dataset/availabilityTable.csv'
 with open(csv_file_path, 'r') as csvfile:
     reader = csv.DictReader(csvfile)

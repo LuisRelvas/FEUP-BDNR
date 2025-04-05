@@ -1,6 +1,6 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from cassandra.cluster import Cluster
-
+from datetime import datetime
 app = Flask(__name__)
 
 cluster = Cluster(['localhost'])  
@@ -8,52 +8,10 @@ session = cluster.connect()
 
 session.set_keyspace('house_market') 
 
-@app.route('/hosts', methods=['GET'])
-def get_hosts():
-    rows = session.execute('SELECT * FROM listings_by_host')
-    hosts = []
-    for row in rows:
-        hosts.append({
-            'host_id': row.host_id,
-            'listing_id': row.listing_id,
-            'host_name': row.host_name,
-            'host_location': row.host_location,
-            'host_about': row.host_about,
-            'host_response_time': row.host_response_time,
-            'host_picture_url': row.host_picture_url,
-        })
-    return jsonify(hosts)
 
-# @app.route('/hosts/<int:host_id>', methods=['GET'])
-# def get_hosts_by_id(host_id):
-#     rows = session.execute(f'SELECT * FROM listings_by_host where host_id = {host_id}')
-#     for row in rows:
-#         host = {
-#             'host_id': row.host_id,
-#             'host_name': row.host_name,
-#             'host_since': row.host_since,
-#             'host_location': row.host_location,
-#             'host_response_time': row.host_response_time,
-#             'host_response_rate': row.host_response_rate,
-#             'host_acceptance_rate': row.host_acceptance_rate,
-#             'host_is_superhost': row.host_is_superhost,
-#             'host_thumbnail_url': row.host_thumbnail_url,
-#             'host_picture_url': row.host_picture_url,
-#             'host_neighbourhood': row.host_neighbourhood,
-#             'host_listings_count': row.host_listings_count,
-#             'host_total_listings_count': row.host_total_listings_count,
-#             'host_verifications': row.host_verifications,
-#             'host_has_profile_pic': row.host_has_profile_pic,
-#             'host_identity_verified': row.host_identity_verified
-#         }
-#     return jsonify(host)
-
-# session.execute('DROP MATERIALIZED VIEW IF EXISTS listings_by_host;')
-# session.execute('CREATE MATERIALIZED VIEW listings_by_host AS SELECT * FROM listings WHERE host_id IS NOT NULL PRIMARY KEY (host_id, id);')
-
-@app.route('/listings', methods=['GET'])
+@app.route('/listings/', methods=['GET'])
 def get_listings():
-    rows = session.execute(f'SELECT * FROM listings LIMIT 10')
+    rows = session.execute(f'SELECT * FROM listings')
     listings = []
     for row in rows:
         listings.append({
@@ -75,58 +33,82 @@ def get_listings():
         })
     return jsonify(listings)
 
-# @app.route('/listings/<int:listing_id>', methods=['GET'])
-# def get_listing_by_id(listing_id):
-#     query = f"SELECT * FROM listings WHERE id = {listing_id}"
-#     rows = session.execute(query)
+@app.route('/listings/id/<int:listing_id>/', methods=['GET'])
+def get_listing(listing_id):
+    row = session.execute(f'SELECT * FROM listings WHERE listing_id = {listing_id}')
+    listing = {
+        'listing_id': row[0].listing_id,
+        'name': row[0].name,
+        'description': row[0].description,
+        'neighborhood_overview': row[0].neighborhood_overview,
+        'neighbourhood_cleansed': row[0].neighbourhood_cleansed,
+        'neighbourhood_group_cleansed': row[0].neighbourhood_group_cleansed,
+        'property_type': row[0].property_type,
+        'bathrooms': row[0].bathrooms,
+        'bedrooms': row[0].bedrooms,
+        'amenities': row[0].amenities,
+        'host_id': row[0].host_id,
+        'host_name': row[0].host_name,
+        'price': float(row[0].price) if row[0].price else None,
+        'picture_url': row[0].picture_url,
+        'rating' : float(row[0].review_scores_rating) if row[0].review_scores_rating else None,
+    }
     
-#     row = next(iter(rows), None)
-    
-#     if not row:
-#         return jsonify({"error": "Listing not found"}), 404
-    
-#     # Format the listing data
-#     listing = {
-#         'id': row.id,
-#         'listing_url': row.listing_url,
-#         'name': row.name,
-#         'description': row.description,
-#         'neighborhood_overview': row.neighborhood_overview,
-#         'property_type': row.property_type,
-#         'room_type': row.room_type,
-#         'accommodates': row.accommodates,
-#         'bathrooms': row.bathrooms,
-#         'bedrooms': row.bedrooms,
-#         'amenities': row.amenities,
-#         'host_id': row.host_id,
-#         'host_name': row.host_name,
-#         'minimum_nights': row.minimum_nights,
-#         'maximum_nights': row.maximum_nights,
-#         'price': float(row.price) if row.price else None
-#     }
-    
-#     return jsonify(listing)
+    return listing
 
-
-
-@app.route('/availability/<int:listing_id>/', methods=['GET'])
-def get_availability():
-    rows = session.execute('SELECT * FROM availability LIMIT 1')
-    availability = []
+@app.route('/listings/host/<int:host_id>/', methods=['GET'])
+def get_listing_by_host(host_id):
+    rows = session.execute(f'SELECT * FROM listings_by_host WHERE host_id = {host_id}')
+    listings = []
     for row in rows:
-        availability.append({
-            'id': row.id,
-            'has_availability': row.has_availability,
-            'availability_30': row.availability_30,
-            'availability_60': row.availability_60,
-            'availability_90': row.availability_90,
-            'availability_365': row.availability_365
+        listings.append({
+            'host_id': row.host_id,
+            'listing_id': row.listing_id,
+            'host_name': row.host_name,
+            'host_location': row.host_location,
+            'host_about': row.host_about,
+            'host_response_time': row.host_response_time,
+            'host_picture_url': row.host_picture_url
         })
-    return jsonify(availability)
+    return jsonify(listings)
+
+@app.route('/bookings/<int:listing_id>/', methods=['GET'])
+def get_bookings_by_listing(listing_id):
+    rows = session.execute(f'SELECT * FROM bookings_by_listing WHERE listing_id = {listing_id}')
+    bookings = []
+    for row in rows:
+        bookings.append({
+            'listing_id': row.listing_id,
+            'start_date': str(row.start_date) if row.start_date else None,
+            'end_date': str(row.end_date) if row.end_date else None,
+            'guest_username': row.guest_username,
+        })
+    return jsonify(bookings)
+
 
 @app.route('/listings2/', methods=['GET'])
 def get_listings_by_date_location():
-    rows = session.execute('SELECT * FROM available_listings_by_date_and_location limit 10')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    neighbourhood = request.args.get('neighbourhood_cleansed')
+
+    if not start_date or not end_date or not neighbourhood:
+        return jsonify({"error": "Missing required query parameters: start_date, end_date, neighbourhood_cleansed"}), 400
+
+    try:
+        # Convert dates from string to datetime.date
+        start = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end = datetime.strptime(end_date, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({"error": "Dates must be in YYYY-MM-DD format"}), 400
+
+    query = """
+        SELECT * FROM available_listings_by_date_and_location
+        WHERE date >= %s AND date <= %s AND neighbourhood_cleansed = %s
+        ALLOW FILTERING
+    """
+
+    rows = session.execute(query, (start, end, neighbourhood))
     listings = []
     for row in rows:
         listings.append({
@@ -137,8 +119,9 @@ def get_listings_by_date_location():
             'price': float(row.price) if row.price else None,
             'name': row.name,
             'property_type': row.property_type,
-            'review_scores_rating': round(float(row.review_scores_rating),2) if row.review_scores_rating else None
+            'review_scores_rating': round(float(row.review_scores_rating), 2) if row.review_scores_rating else None
         })
+
     return jsonify(listings)
 
 
