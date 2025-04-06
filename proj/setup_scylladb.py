@@ -15,16 +15,16 @@ session.execute("""
 session.set_keyspace('house_market')
 
 # Drop the table if it exists in order to add more columns to the TABLE
-# session.execute('DROP MATERIALIZED VIEW IF EXISTS listings_by_host;')
+# session.execute("DROP TABLE IF EXISTS house_market.availability")
+session.execute('DROP TABLE IF EXISTS house_market.listings_by_host;')
 session.execute("DROP TABLE IF EXISTS house_market.listings")
 session.execute("DROP TABLE IF EXISTS house_market.hosts")
-session.execute("DROP TABLE IF EXISTS house_market.availability")
 session.execute("DROP TABLE IF EXISTS house_market.available_listings_by_date_and_location")
 session.execute("DROP TABLE IF EXISTS house_market.bookings_by_listing")
 
-# LISTINGS TABLE
+# LISTING TABLE
 session.execute("""
-    CREATE TABLE IF NOT EXISTS listings (
+    CREATE TABLE IF NOT EXISTS listing (
         listing_id BIGINT PRIMARY KEY,
         name TEXT,
         description TEXT,
@@ -116,7 +116,7 @@ with open(csv_file_path, 'r') as csvfile:
     for row in reader:
         price = row['price'].replace(',', '').replace('$', '') if row['price'] else None
         session.execute("""
-        INSERT INTO listings (listing_id, name, description, neighborhood_overview,neighbourhood_cleansed, neighbourhood_group_cleansed, amenities,property_type,price,bedrooms,bathrooms,review_scores_rating,host_id,host_name, host_location,host_response_time, picture_url)
+        INSERT INTO listing (listing_id, name, description, neighborhood_overview,neighbourhood_cleansed, neighbourhood_group_cleansed, amenities,property_type,price,bedrooms,bathrooms,review_scores_rating,host_id,host_name, host_location,host_response_time, picture_url)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             getCleanNumber(row['id']),  
@@ -138,6 +138,8 @@ with open(csv_file_path, 'r') as csvfile:
             row['picture_url']
         ))
 
+print("Listing table populated!")
+
 csv_file_path = 'dataset/hostTable.csv'
 with open(csv_file_path, 'r') as csvfile:
     reader = csv.DictReader(csvfile)
@@ -155,25 +157,11 @@ with open(csv_file_path, 'r') as csvfile:
             row['host_picture_url'],
         ))
 
-csv_file_path = 'dataset/availabilityTable.csv'
-with open(csv_file_path, 'r') as csvfile:
-    reader = csv.DictReader(csvfile)
-    for row in reader:
-        session.execute("""
-            INSERT INTO availability (id, has_availability, availability_30, availability_60, availability_90, availability_365)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (
-            getCleanNumber(row['id']),  
-            row['has_availability'],
-            int(row['availability_30']),
-            int(row['availability_60']),
-            int(row['availability_90']),
-            int(row['availability_365'])
-        ))
+print("listing_by_host table populated!")
 
 # Load listings data into memory
 listings_data = {}
-rows = session.execute("SELECT listing_id, name, review_scores_rating, property_type, neighbourhood_cleansed FROM listings")
+rows = session.execute("SELECT listing_id, name, review_scores_rating, property_type, neighbourhood_cleansed FROM listing")
 for row in rows:
     listings_data[row.listing_id] = {
         'name': row.name,
